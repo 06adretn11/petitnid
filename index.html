@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PetitNid — Garde d'enfant</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --cream:#faf7f2; --sand:#e8dfd0; --rust:#c8663a;
+  --forest:#2d4a3e; --forest-l:#3d6455;
+  --text:#1a1a1a; --muted:#6b6b6b; --white:#fff;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--text);}
+
+header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;}
+.logo{font-family:'Playfair Display',serif;color:var(--cream);font-size:1.4rem;}
+.logo span{color:#e8845a;}
+.hinfo{font-size:0.75rem;color:rgba(250,247,242,0.65);}
+.hinfo strong{color:var(--cream);}
+
+.app{display:grid;grid-template-columns:415px 1fr;height:calc(100vh - 60px);}
+
+.sidebar{background:var(--white);border-right:1px solid var(--sand);display:flex;flex-direction:column;overflow:hidden;}
+.search-box{padding:1rem;border-bottom:1px solid var(--sand);}
+.search-box label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);display:block;margin-bottom:0.4rem;}
+.irow{display:flex;gap:0.4rem;}
+.ainput{flex:1;border:1.5px solid var(--sand);border-radius:8px;padding:0.55rem 0.8rem;font-family:'DM Sans',sans-serif;font-size:0.875rem;background:var(--cream);outline:none;transition:border-color .2s;}
+.ainput:focus{border-color:var(--forest);}
+.rsel{border:1.5px solid var(--sand);border-radius:8px;padding:0.55rem 0.5rem;font-family:'DM Sans',sans-serif;font-size:0.82rem;background:var(--cream);outline:none;cursor:pointer;}
+.bgo{background:var(--forest);color:var(--cream);border:none;border-radius:8px;padding:0.55rem 1rem;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .2s;}
+.bgo:hover{background:var(--forest-l);}
+.bgo:disabled{opacity:.5;cursor:not-allowed;}
+
+/* Source panel */
+.srcpanel{padding:0.5rem 1rem;border-bottom:1px solid var(--sand);background:#f5f8f6;}
+.srcrow{display:flex;align-items:center;gap:0.45rem;font-size:0.67rem;margin-bottom:0.2rem;}
+.srcrow:last-child{margin-bottom:0;}
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .3s;}
+.sdot.idle   {background:#ccc;}
+.sdot.loading{background:#f0c040;animation:blink .8s ease infinite;}
+.sdot.ok     {background:#4caf50;}
+.sdot.err    {background:#e57373;}
+.sdot.na     {background:#ddd;}
+@keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
+.sname{color:var(--muted);font-weight:600;min-width:118px;}
+.scount{color:var(--forest);font-weight:700;}
+.serr{color:#c85c1a;font-style:italic;font-size:.63rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;}
+
+.progress-bar{height:3px;background:var(--sand);}
+.progress-fill{height:100%;background:var(--forest);width:0%;transition:width .4s ease;}
+
+/* Filtres */
+.filters{padding:0.65rem 1rem;border-bottom:1px solid var(--sand);}
+.chips{display:flex;gap:0.28rem;flex-wrap:wrap;margin-bottom:0.45rem;}
+.chip{padding:.22rem .58rem;border-radius:20px;border:1.5px solid var(--sand);font-size:.71rem;font-weight:600;cursor:pointer;transition:all .15s;background:var(--cream);color:var(--muted);white-space:nowrap;}
+.chip:hover{border-color:var(--forest);color:var(--forest);}
+.chip.on{color:var(--cream);}
+.chip[data-t="creche_pub"].on  {background:#2a7a45;border-color:#2a7a45;}
+.chip[data-t="creche_assoc"].on{background:#5a7a28;border-color:#5a7a28;}
+.chip[data-t="creche_priv"].on {background:#3a5c9a;border-color:#3a5c9a;}
+.chip[data-t="am"].on          {background:#c8663a;border-color:#c8663a;}
+.chip[data-t="halte"].on       {background:#7a7a2a;border-color:#7a7a2a;}
+.frow{display:flex;gap:.4rem;}
+.fsel{flex:1;border:1.5px solid var(--sand);border-radius:6px;padding:.3rem .5rem;font-size:.73rem;font-family:'DM Sans',sans-serif;background:var(--cream);outline:none;}
+
+/* Liste */
+.listwrap{flex:1;overflow-y:auto;}
+.listhdr{padding:.5rem 1rem;font-size:.75rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--white);border-bottom:1px solid var(--sand);z-index:10;}
+.listhdr strong{color:var(--text);font-size:.95rem;}
+.empty{text-align:center;padding:2.5rem 1rem;color:var(--muted);}
+.empty .big{font-size:2.2rem;margin-bottom:.6rem;}
+
+.card{border-bottom:1px solid var(--sand);padding:.75rem 1rem;cursor:pointer;transition:background .12s;}
+.am-card{border-bottom:none!important;margin-bottom:.4rem;border-radius:10px!important;}
+.card:hover{background:#f5f8f5;}
+.card.active{background:#edf5f0;border-left:3px solid var(--forest);padding-left:calc(1rem - 3px);}
+.ctop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.24rem;}
+.tbadge{font-size:.58rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;padding:.12rem .4rem;border-radius:4px;white-space:nowrap;}
+.tb-pub  {background:#d4e8d8;color:#1a5c2a;}
+.tb-assoc{background:#ddeece;color:#2e5010;}
+.tb-priv {background:#dde0f0;color:#2a3c7c;}
+.tb-am   {background:#fde8d8;color:#7a3a1a;}
+.tb-halte{background:#f0f0d4;color:#5c5c1a;}
+.cdist{font-size:.7rem;color:var(--muted);font-weight:500;white-space:nowrap;}
+.cname{font-family:'Playfair Display',serif;font-size:.88rem;color:var(--forest);font-weight:700;margin-bottom:.1rem;line-height:1.3;}
+.caddr{font-size:.69rem;color:var(--muted);margin-bottom:.32rem;}
+.cmeta{display:flex;gap:.45rem;flex-wrap:wrap;}
+.m{font-size:.69rem;color:var(--muted);}
+.cfooter{margin-top:.5rem;padding-top:.38rem;border-top:1px solid #f0ece5;display:flex;flex-wrap:wrap;align-items:center;gap:.3rem;}
+.cbtn{font-size:.67rem;background:var(--forest);color:white;padding:.2rem .52rem;border-radius:5px;text-decoration:none;font-weight:600;white-space:nowrap;flex-shrink:0;}
+.cbtn:hover{background:var(--forest-l);}
+.citin{font-size:.67rem;color:var(--forest);font-weight:600;text-decoration:none;white-space:nowrap;flex-shrink:0;}
+.citin:hover{text-decoration:underline;}
+.src-pill{font-size:.59rem;font-weight:700;padding:.12rem .4rem;border-radius:4px;}
+
+/* Map */
+#map{width:100%;height:100%;}
+.legend{position:absolute;bottom:24px;right:10px;z-index:500;background:white;border-radius:10px;padding:.6rem .9rem;box-shadow:0 2px 12px rgba(0,0,0,.12);font-size:.7rem;}
+.ltitle{font-weight:700;text-transform:uppercase;font-size:.58rem;letter-spacing:.08em;color:var(--muted);margin-bottom:.38rem;}
+.li{display:flex;align-items:center;gap:.4rem;margin-bottom:.2rem;}
+.dot{width:11px;height:11px;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,.25);flex-shrink:0;}
+.src-legend{position:absolute;bottom:24px;left:10px;z-index:500;background:white;border-radius:10px;padding:.6rem .9rem;box-shadow:0 2px 12px rgba(0,0,0,.12);font-size:.7rem;}
+.sli{display:flex;align-items:center;gap:.38rem;margin-bottom:.2rem;}
+.sring{width:11px;height:11px;border-radius:50%;flex-shrink:0;}
+
+/* Bloc nounou + modal détail */
+.nounou-card{border-bottom:none!important;margin-bottom:.4rem;border-radius:10px!important;cursor:pointer;}
+.nounou-card:hover{filter:brightness(.97);}
+.pn-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:8000;align-items:center;justify-content:center;}
+.pn-modal-overlay.open{display:flex;}
+.pn-modal{background:white;border-radius:14px;width:min(480px,94vw);max-height:88vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.22);font-family:'DM Sans',sans-serif;}
+.pn-modal-hdr{padding:1rem 1.2rem .6rem;border-bottom:1px solid #f0ece5;display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:white;z-index:1;}
+.pn-modal-hdr h3{margin:0;font-size:.95rem;color:#2d4a3e;font-family:'Playfair Display',serif;}
+.pn-close{background:none;border:none;font-size:1.2rem;cursor:pointer;color:#999;padding:.1rem .3rem;border-radius:4px;}
+.pn-close:hover{background:#f5f5f5;color:#333;}
+.pn-section{padding:.75rem 1.2rem;border-bottom:1px solid #f5f2ee;}
+.pn-section:last-child{border-bottom:none;}
+.pn-section h4{margin:0 0 .4rem;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#9a6a3a;}
+.pn-section p{margin:.2rem 0;font-size:.76rem;color:#444;line-height:1.5;}
+.pn-btns{display:flex;flex-direction:column;gap:.3rem;margin-top:.4rem;}
+.pn-btn{display:flex;align-items:center;justify-content:space-between;padding:.45rem .75rem;border-radius:7px;text-decoration:none;font-size:.75rem;font-weight:600;border:1.5px solid transparent;transition:filter .12s;}
+.pn-btn:hover{filter:brightness(.93);}
+.pn-btn .pn-badge{font-size:.62rem;font-weight:700;padding:.1rem .38rem;border-radius:4px;white-space:nowrap;}
+
+/* ── Comparateur modal ─────────────────────── */
+.cmp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center;padding:1rem;}
+.cmp-overlay.open{display:flex;}
+.cmp-modal{background:var(--white);border-radius:16px;width:min(920px,96vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 12px 60px rgba(0,0,0,.25);overflow:hidden;}
+.cmp-hdr{padding:1rem 1.4rem;border-bottom:1px solid var(--sand);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--forest);}
+.cmp-hdr h2{font-family:'Playfair Display',serif;color:var(--cream);font-size:1.1rem;margin:0;}
+.cmp-hdr-sub{font-size:.7rem;color:rgba(250,247,242,.65);margin-top:.1rem;}
+.cmp-close{background:none;border:none;color:var(--cream);font-size:1.3rem;cursor:pointer;padding:.2rem .4rem;border-radius:4px;opacity:.7;}
+.cmp-close:hover{opacity:1;background:rgba(255,255,255,.1);}
+.cmp-body{overflow-y:auto;flex:1;}
+
+/* Bandeau salaire */
+.cmp-salary{padding:.85rem 1.4rem;background:#f5f8f5;border-bottom:1px solid var(--sand);display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
+.cmp-salary label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+.salary-input-wrap{display:flex;align-items:center;gap:.4rem;}
+.cmp-salary input[type=range]{width:180px;accent-color:var(--forest);cursor:pointer;}
+.salary-val{font-size:.95rem;font-weight:800;color:var(--forest);min-width:80px;}
+.salary-toggle{display:flex;border:1.5px solid var(--sand);border-radius:6px;overflow:hidden;}
+.salary-toggle button{padding:.25rem .65rem;font-size:.68rem;font-weight:700;border:none;cursor:pointer;background:var(--cream);color:var(--muted);transition:all .15s;}
+.salary-toggle button.active{background:var(--forest);color:var(--cream);}
+.cmp-aides-note{font-size:.67rem;color:var(--muted);margin-left:.5rem;}
+
+/* Tableau comparatif */
+.cmp-table-wrap{padding:1rem 1.4rem 1.4rem;overflow-x:auto;}
+.cmp-table{width:100%;border-collapse:collapse;min-width:640px;}
+.cmp-table th{padding:.5rem .75rem;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:2px solid var(--sand);white-space:nowrap;}
+.cmp-table th.mode-hdr{text-align:center;font-size:.72rem;color:var(--forest);padding:.6rem .5rem;}
+.cmp-table td{padding:.55rem .75rem;font-size:.76rem;vertical-align:top;border-bottom:1px solid #f0ece5;line-height:1.4;}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table .row-label{font-weight:700;color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;width:110px;}
+.cmp-table .cost-cell{text-align:center;font-weight:800;font-size:.9rem;color:var(--forest);}
+.cmp-table .cost-cell .cost-sub{font-size:.62rem;font-weight:400;color:var(--muted);display:block;margin-top:.1rem;}
+.pro{color:#2a7a45;font-size:.72rem;line-height:1.45;}
+.pro::before{content:"✓ ";font-weight:700;}
+.con{color:#c85c1a;font-size:.72rem;line-height:1.45;}
+.con::before{content:"✗ ";font-weight:700;}
+.mode-col{text-align:center;}
+.mode-badge{display:inline-block;padding:.2rem .6rem;border-radius:5px;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.2rem;}
+.cmp-footer{padding:.75rem 1.4rem;border-top:1px solid var(--sand);font-size:.63rem;color:var(--muted);flex-shrink:0;background:#fafaf8;}
+
+/* CTA header */
+.hcta{background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);color:var(--cream);font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:700;padding:.32rem .85rem;border-radius:20px;cursor:pointer;white-space:nowrap;transition:all .18s;letter-spacing:.02em;}
+.hcta:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45);}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Petit<span>Nid</span></div>
+  <button class="hcta" onclick="openCmp()">💶 Quel mode de garde pour mon budget ?</button>
+  <div class="hinfo">
+    <strong id="hcount">–</strong> établissements ·
+    <span id="hbreakdown" style="opacity:.7">–</span>
+  </div>
+</header>
+
+<div class="app">
+  <div class="sidebar">
+
+    <div class="search-box">
+      <label>Votre adresse</label>
+      <div class="irow">
+        <input class="ainput" id="addr" type="text" placeholder="Ex : 44 rue de Tourtille, Paris 20" value="44 rue de Tourtille, Paris 20"/>
+        <select class="rsel" id="radius">
+          <option value="500">500 m</option>
+          <option value="1000" selected>1 km</option>
+          <option value="2000">2 km</option>
+          <option value="5000">5 km</option>
+        </select>
+        <button class="bgo" id="btnS" onclick="runSearch()">Chercher</button>
+      </div>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
+
+    <div class="srcpanel">
+      <div class="srcrow"><div class="sdot idle" id="dot-eaje"></div><span class="sname">OSM+</span><span class="scount" id="cnt-eaje">–</span><span class="serr" id="err-eaje"></span></div>
+      <div class="srcrow"><div class="sdot idle" id="dot-osm"></div><span class="sname">OpenStreetMap</span><span class="scount" id="cnt-osm">–</span><span class="serr" id="err-osm"></span></div>
+      <div class="srcrow"><div class="sdot idle" id="dot-paris"></div><span class="sname">Paris Data (QFP)</span><span class="scount" id="cnt-paris">–</span><span class="serr" id="err-paris"></span></div>
+    </div>
+
+    <div class="filters">
+      <div class="chips" id="chips">
+        <div class="chip on" data-t="creche_pub">🏛 Municipale</div>
+        <div class="chip on" data-t="creche_assoc">🤝 Associative</div>
+        <div class="chip on" data-t="creche_priv">🏢 Privée</div>
+        <div class="chip on" data-t="am">👶 Ass. mat. / MAM</div>
+        <div class="chip on" data-t="halte">🎠 Halte / multi</div>
+      </div>
+      <div class="frow">
+        <select class="fsel" id="fSort">
+          <option value="dist">Trier par distance</option>
+          <option value="name">Trier par nom</option>
+          <option value="source">Trier par source</option>
+        </select>
+        <select class="fsel" id="fSource">
+          <option value="all">Toutes sources</option>
+          <option value="EAJE">OSM+</option>
+          <option value="OSM">OpenStreetMap</option>
+          <option value="PARIS">Paris Data</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="listwrap">
+      <div class="listhdr">
+        <span id="lcount">Lancez une recherche…</span>
+        <span id="lspin" style="display:none"><span class="spin"></span>Chargement…</span>
+      </div>
+      <div id="lbody">
+        <div class="empty"><div class="big">🗺</div><p>Entrez votre adresse<br>et cliquez sur Chercher.</p></div>
+      </div>
+      <div style="padding:.35rem 1rem;font-size:.62rem;color:#bbb;border-top:1px solid var(--sand);flex-shrink:0;background:var(--white)">
+        * Estimation réglementaire — donnée exacte non disponible dans les bases publiques
+      </div>
+    </div>
+  </div>
+
+  <div style="position:relative;">
+    <div id="map"></div>
+    <div class="legend">
+      <div class="ltitle">Type de garde</div>
+      <div class="li"><div class="dot" style="background:#2a7a45"></div>Crèche municipale</div>
+      <div class="li"><div class="dot" style="background:#5a7a28"></div>Crèche associative</div>
+      <div class="li"><div class="dot" style="background:#3a5c9a"></div>Crèche privée</div>
+      <div class="li"><div class="dot" style="background:#c8663a"></div>Ass. mat. / MAM</div>
+      <div class="li"><div class="dot" style="background:#7a7a2a"></div>Halte / multi-accueil</div>
+    </div>
+    <div class="src-legend">
+      <div class="ltitle">Source</div>
+      <div class="sli"><div class="sring" style="background:#d4e8f0;border:2px solid #3a8abf"></div>OSM+</div>
+      <div class="sli"><div class="sring" style="background:#fff0d4;border:2px solid #c8a030"></div>OpenStreetMap</div>
+      <div class="sli"><div class="sring" style="background:#f0d4e8;border:2px solid #c030a0"></div>Paris Data</div>
+      <div class="sli"><div class="sring" style="background:#e8d4f0;border:2px solid #9a40c0"></div>Multi-sources</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="./js/main.js"></script>
+
+<!-- ── Modal détail nounous ───────────────────────────────── -->
+<div class="pn-modal-overlay" id="nounouModal" onclick="if(event.target===this)closeNounouModal()">
+  <div class="pn-modal">
+    <div class="pn-modal-hdr">
+      <h3>🏠 Trouver une nounou à domicile</h3>
+      <button class="pn-close" onclick="closeNounouModal()">✕</button>
+    </div>
+
+    <!-- Section 1 : Contexte rapide -->
+    <div class="pn-section">
+      <h4>📋 Ce qu'il faut savoir</h4>
+      <p>La garde à domicile n'est pas réglementée par agrément — aucun fichier public n'existe. Les professionnelles se trouvent via des plateformes, le bouche-à-oreille ou des agences. Vous êtes employeur direct : cotisations via <strong>Pajemploi</strong> (URSSAF), crédit d'impôt de 50% des frais.</p>
+    </div>
+
+    <!-- Section 2 : Plateformes en ligne -->
+    <div class="pn-section">
+      <h4>💻 Plateformes en ligne — modèles économiques</h4>
+      <div class="pn-btns">
+        <a href="https://www.yoopala.com" target="_blank" class="pn-btn" style="background:#eef4fb;border-color:#c0d4ec;color:#1a3a6a">
+          <span>
+            <strong>Yoopala</strong><br>
+            <span style="font-size:.67rem;font-weight:400;color:#555">Abonnement famille ~29€/mois · profils vérifiés · mise en relation directe. Option "service complet" avec gestion admin.</span>
+          </span>
+          <span class="pn-badge" style="background:#dce8f8;color:#1a3a6a">Abonnement</span>
+        </a>
+        <a href="https://www.nounoutop.com" target="_blank" class="pn-btn" style="background:#fef6ec;border-color:#f0d8a8;color:#7a4a00">
+          <span>
+            <strong>Nounou Top</strong><br>
+            <span style="font-size:.67rem;font-weight:400;color:#555">Gratuit pour consulter · paiement à la mise en relation (~15–30€). Annonces de particuliers, peu de vérification.</span>
+          </span>
+          <span class="pn-badge" style="background:#fde8c0;color:#7a4a00">À l'acte</span>
+        </a>
+        <a href="https://www.care.com/fr-fr" target="_blank" class="pn-btn" style="background:#f0faf0;border-color:#b0d8b0;color:#1a5a1a">
+          <span>
+            <strong>Care.com</strong><br>
+            <span style="font-size:.67rem;font-weight:400;color:#555">Abonnement ~20€/mois · large base internationale · vérification d'identité. Attention : qualité variable, nombreux profils inactifs.</span>
+          </span>
+          <span class="pn-badge" style="background:#d0f0d0;color:#1a5a1a">Abonnement</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Section 3 : Réseau & gratuit -->
+    <div class="pn-section">
+      <h4>🤝 Trouver gratuitement — bouche-à-oreille & réseaux</h4>
+      <p><strong>Groupes Facebook locaux</strong> — cherchez "Nounous [votre arrondissement]" ou "Parents [arrondissement] Paris". Très actifs dans les 11e, 19e, 20e.</p>
+      <p><strong>WhatsApp de copropriété ou d'école</strong> — la recommandation directe reste la source n°1 de confiance.</p>
+      <p><strong>Panneau d'affichage</strong> de la crèche, école maternelle ou PMI de votre quartier.</p>
+      <p><strong>Pôle Emploi</strong> — des candidats enregistrés comme "assistants de vie aux familles" cherchent activement des postes de garde.</p>
+    </div>
+
+    <!-- Section 4 : Agences privées -->
+    <div class="pn-section">
+      <h4>🏢 Agences privées de placement</h4>
+      <p>Pour un recrutement sécurisé avec vérification approfondie du profil (références, casier, expérience). Coût : <strong>1 à 3 mois de salaire</strong> en frais de placement (non remboursé si rupture avant 3 mois en général).</p>
+      <div class="pn-btns">
+        <a href="https://www.babychou.com" target="_blank" class="pn-btn" style="background:#f8f4ff;border-color:#d8c8f0;color:#4a2a8a">
+          <span><strong>Babychou Services</strong> <span style="font-size:.67rem;font-weight:400;color:#666">· réseau national, nounous salariées de l'agence ou mise en relation</span></span>
+          <span class="pn-badge" style="background:#ead8f8;color:#4a2a8a">Agence</span>
+        </a>
+        <a href="https://www.hopandfamily.com" target="_blank" class="pn-btn" style="background:#f8f4ff;border-color:#d8c8f0;color:#4a2a8a">
+          <span><strong>Hop and Family</strong> <span style="font-size:.67rem;font-weight:400;color:#666">· agence parisienne spécialisée garde + au pair, sélection rigoureuse</span></span>
+          <span class="pn-badge" style="background:#ead8f8;color:#4a2a8a">Agence</span>
+        </a>
+        <a href="https://www.bonne-nounou.com" target="_blank" class="pn-btn" style="background:#f8f4ff;border-color:#d8c8f0;color:#4a2a8a">
+          <span><strong>Bonne Nounou</strong> <span style="font-size:.67rem;font-weight:400;color:#666">· placement garde à domicile à Paris, frais à la mise en relation</span></span>
+          <span class="pn-badge" style="background:#ead8f8;color:#4a2a8a">Agence</span>
+        </a>
+      </div>
+      <p style="margin-top:.5rem;font-size:.67rem;color:#aaa">Avec une agence, la nounou peut être salariée de l'agence (pas de démarches employeur) ou mise en relation (vous restez employeur direct).</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal Comparateur modes de garde ──────────────────── -->
+<div class="cmp-overlay" id="cmpOverlay" onclick="if(event.target===this)closeCmp()">
+ <div class="cmp-modal">
+
+  <div class="cmp-hdr">
+   <div>
+    <h2>Comparer les modes de garde</h2>
+    <div class="cmp-hdr-sub">Coût net mensuel estimé · 2 avantages · 2 limites · pour un enfant &lt; 3 ans</div>
+   </div>
+   <button class="cmp-close" onclick="closeCmp()">✕</button>
+  </div>
+
+  <!-- Bandeau salaire -->
+  <div class="cmp-salary">
+   <label>Votre salaire</label>
+   <div class="salary-input-wrap">
+    <div class="salary-toggle">
+     <button id="btnNet" class="active" onclick="setSalaryMode('net')">Net</button>
+     <button id="btnBrut" onclick="setSalaryMode('brut')">Brut</button>
+    </div>
+    <input type="range" id="salarySlider" min="1200" max="10000" step="100" value="2800" oninput="updateCmp()">
+    <span class="salary-val" id="salaryVal">2 800 €</span>
+   </div>
+   <span class="cmp-aides-note">Aides : CMG, crédit d'impôt 50%, PSU inclus dans l'estimation</span>
+  </div>
+
+  <!-- Tableau -->
+  <div class="cmp-table-wrap">
+   <table class="cmp-table" id="cmpTable">
+    <thead>
+     <tr>
+      <th style="width:110px"></th>
+      <th class="mode-hdr"><span class="mode-badge" style="background:#d4e8d8;color:#1a5c2a">🏛 Crèche publique</span></th>
+      <th class="mode-hdr"><span class="mode-badge" style="background:#dde0f0;color:#2a3c7c">🏢 Crèche privée</span></th>
+      <th class="mode-hdr"><span class="mode-badge" style="background:#ddeece;color:#2e5010">🤝 Crèche assoc.</span></th>
+      <th class="mode-hdr"><span class="mode-badge" style="background:#fde8d8;color:#7a3a1a">👶 Ass. maternelle</span></th>
+      <th class="mode-hdr"><span class="mode-badge" style="background:#f5e8d8;color:#7a4a1a">🏠 Nounou partagée</span></th>
+     </tr>
+    </thead>
+    <tbody>
+     <tr>
+      <td class="row-label">Coût net / mois</td>
+      <td class="cost-cell" id="c-pub">–</td>
+      <td class="cost-cell" id="c-priv">–</td>
+      <td class="cost-cell" id="c-assoc">–</td>
+      <td class="cost-cell" id="c-am">–</td>
+      <td class="cost-cell" id="c-share">–</td>
+     </tr>
+     <tr>
+      <td class="row-label">Avantages</td>
+      <td class="mode-col">
+       <div class="pro">Barème CAF selon revenus</div>
+       <div class="pro" style="margin-top:.3rem">Encadrement professionnel réglementé</div>
+      </td>
+      <td class="mode-col">
+       <div class="pro">Places plus disponibles</div>
+       <div class="pro" style="margin-top:.3rem">Horaires étendus souvent</div>
+      </td>
+      <td class="mode-col">
+       <div class="pro">Tarification PSU (comme public)</div>
+       <div class="pro" style="margin-top:.3rem">Projet pédagogique participatif</div>
+      </td>
+      <td class="mode-col">
+       <div class="pro">Accueil individualisé à domicile</div>
+       <div class="pro" style="margin-top:.3rem">CMG + crédit impôt 50%</div>
+      </td>
+      <td class="mode-col">
+       <div class="pro">Coût divisé entre 2 familles</div>
+       <div class="pro" style="margin-top:.3rem">Socialisation dès le départ</div>
+      </td>
+     </tr>
+     <tr>
+      <td class="row-label">Limites</td>
+      <td class="mode-col">
+       <div class="con">Places très rares, liste d'attente longue</div>
+       <div class="con" style="margin-top:.3rem">Fermetures vacances scolaires</div>
+      </td>
+      <td class="mode-col">
+       <div class="con">Coût brut élevé avant aides</div>
+       <div class="con" style="margin-top:.3rem">Qualité très variable selon réseau</div>
+      </td>
+      <td class="mode-col">
+       <div class="con">Peu de places, liste d'attente</div>
+       <div class="con" style="margin-top:.3rem">Implication des parents requise</div>
+      </td>
+      <td class="mode-col">
+       <div class="con">Recherche longue, risque d'absence</div>
+       <div class="con" style="margin-top:.3rem">Vous êtes employeur (admin)</div>
+      </td>
+      <td class="mode-col">
+       <div class="con">Coordination complexe entre familles</div>
+       <div class="con" style="margin-top:.3rem">Arrêt si l'autre famille part</div>
+      </td>
+     </tr>
+     <tr>
+      <td class="row-label">Disponibilité</td>
+      <td class="mode-col" style="font-size:.72rem;color:#c85c1a;font-weight:600">⚠️ Très faible à Paris</td>
+      <td class="mode-col" style="font-size:.72rem;color:#4caf50;font-weight:600">✓ Plutôt bonne</td>
+      <td class="mode-col" style="font-size:.72rem;color:#c85c1a;font-weight:600">⚠️ Faible</td>
+      <td class="mode-col" style="font-size:.72rem;color:#f0a030;font-weight:600">~ Délai 1–3 mois</td>
+      <td class="mode-col" style="font-size:.72rem;color:#f0a030;font-weight:600">~ Délai 1–2 mois</td>
+     </tr>
+     <tr>
+      <td class="row-label">Démarches</td>
+      <td class="mode-col" style="font-size:.72rem;color:var(--muted)">Inscription mairie + crèche</td>
+      <td class="mode-col" style="font-size:.72rem;color:var(--muted)">Contact direct réseau</td>
+      <td class="mode-col" style="font-size:.72rem;color:var(--muted)">Inscription + réunions parents</td>
+      <td class="mode-col" style="font-size:.72rem;color:var(--muted)">Contrat + Pajemploi + CMG</td>
+      <td class="mode-col" style="font-size:.72rem;color:var(--muted)">Contrat partagé + Pajemploi</td>
+     </tr>
+    </tbody>
+   </table>
+  </div>
+
+  <div class="cmp-footer">
+   * Estimations basées sur le barème PSU CNAF 2024, le plafond CMG, et le crédit d'impôt services à la personne (50% des dépenses, plafond 3 500€/an/enfant). Les montants sont indicatifs — votre CAF calcule le montant exact selon votre situation complète. Salaire net mensuel saisi. Brut ≈ net ÷ 0,78.
+  </div>
+
+ </div>
+</div>
+
+</body>
+</html>
