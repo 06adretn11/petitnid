@@ -74,28 +74,53 @@ let activeT = new Set([
 ]);
 
 // ═══════════════════════════════════════════
-// OVERPASS — serveurs avec fallback automatique
+// OVERPASS — timeout adaptatif + retry délai
+// Timeout selon rayon : évite d'attendre 20s
+// inutilement sur un petit rayon, et donne
+// plus de temps aux grandes zones.
+// Retry : attend 2s avant le miroir — souvent
+// suffisant pour passer une surcharge ponctuelle.
 // ═══════════════════════════════════════════
 const OVERPASS_SERVERS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
 ];
 
-async function overpassFetch(query, timeoutMs = 20000) {
+function overpassTimeout(radiusM) {
+  if (radiusM <= 500)  return 12000;
+  if (radiusM <= 1000) return 18000;
+  if (radiusM <= 2000) return 26000;
+  return 38000;
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function overpassFetch(query, radiusM = 1000) {
+  const timeoutMs = overpassTimeout(radiusM);
+  // Synchroniser le timeout Overpass (côté serveur) avec notre timeout JS
+  const ovTimeout = Math.floor(timeoutMs / 1000) - 2;
+  const timedQuery = query.replace(/\[timeout:\d+\]/, `[timeout:${ovTimeout}]`);
+
   let lastError;
-  for (const server of OVERPASS_SERVERS) {
+  for (let i = 0; i < OVERPASS_SERVERS.length; i++) {
+    const server = OVERPASS_SERVERS[i];
+
+    // Délai de 2s avant le miroir — laisse le temps au premier serveur
+    // de se désaturer sans bloquer l'utilisateur trop longtemps
+    if (i > 0) await sleep(2000);
+
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
       const res = await fetch(server, {
         method:  'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body:    'data=' + encodeURIComponent(query),
+        body:    'data=' + encodeURIComponent(timedQuery),
         signal:  ctrl.signal,
       });
       clearTimeout(tid);
-      if (res.status === 504) {
-        lastError = new Error('Serveur cartographique surchargé (504). Réessayez dans quelques secondes.');
+      if (res.status === 504 || res.status === 429) {
+        lastError = new Error('Serveur cartographique surchargé. Réessayez dans quelques secondes.');
         continue;
       }
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -184,7 +209,7 @@ async function fetchEAJE(lat, lng, radiusM) {
   nwr["amenity"="social_facility"]["social_facility"="childcare"](around:${radiusM},${lat},${lng});
 );
 out center tags;`;
-  const d = await overpassFetch(query);
+  const d = await overpassFetch(query, radiusM);
   return (d.elements||[]).map(e => {
     const eLat = e.lat ?? e.center?.lat;
     const eLng = e.lon ?? e.center?.lon;
@@ -223,7 +248,7 @@ async function fetchOSM(lat, lng, radiusM) {
   nwr["amenity"="kindergarten"]["school:FR"!="maternelle"]["isced:level"!="1"](around:${radiusM},${lat},${lng});
 );
 out center tags;`;
-  const d = await overpassFetch(query);
+  const d = await overpassFetch(query, radiusM);
   const ASSOC_OPS = ['association','parental','parentale','loi 1901','associatif'];
   return (d.elements||[]).map(e => {
     const eLat = e.lat ?? e.center?.lat;
