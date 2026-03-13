@@ -127,7 +127,7 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
 .pn-btn .pn-badge{font-size:.62rem;font-weight:700;padding:.1rem .38rem;border-radius:4px;white-space:nowrap;}
 
 /* ── Comparateur modal ─────────────────────── */
-.cmp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center;padding:1rem;}
+.cmp-overlay{display: none ;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center;padding:1rem;}
 .cmp-overlay.open{display:flex;}
 .cmp-modal{background:var(--white);border-radius:16px;width:min(920px,96vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 12px 60px rgba(0,0,0,.25);overflow:hidden;}
 .cmp-hdr{padding:1rem 1.4rem;border-bottom:1px solid var(--sand);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--forest);}
@@ -176,7 +176,7 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
 
 <header>
   <div class="logo">Petit<span>Nid</span></div>
-  <button class="hcta" onclick="openCmp()">💶 Quel mode de garde pour mon budget ?</button>
+<button class="hcta">⚖️ Comparer les modes de garde</button>
   <div class="hinfo">
     <strong id="hcount">–</strong> établissements ·
     <span id="hbreakdown" style="opacity:.7">–</span>
@@ -196,23 +196,21 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
           <option value="2000">2 km</option>
           <option value="5000">5 km</option>
         </select>
-        <button class="bgo" id="btnS" onclick="runSearch()">Chercher</button>
+        <button class="bgo" id="btnS">Chercher</button>
       </div>
     </div>
     <div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
 
-    <div class="srcpanel">
+<div class="srcpanel" style="display:none">
       <div class="srcrow"><div class="sdot idle" id="dot-eaje"></div><span class="sname">OSM+</span><span class="scount" id="cnt-eaje">–</span><span class="serr" id="err-eaje"></span></div>
       <div class="srcrow"><div class="sdot idle" id="dot-osm"></div><span class="sname">OpenStreetMap</span><span class="scount" id="cnt-osm">–</span><span class="serr" id="err-osm"></span></div>
-      <div class="srcrow"><div class="sdot idle" id="dot-paris"></div><span class="sname">Paris Data (QFP)</span><span class="scount" id="cnt-paris">–</span><span class="serr" id="err-paris"></span></div>
-    </div>
+      <div class="srcrow"><div class="sdot idle" id="dot-local"></div><span class="sname" id="lbl-local">Source locale</span><span class="scount" id="cnt-local">–</span><span class="serr" id="err-local"></span></div>    </div>
 
     <div class="filters">
-      <div class="chips" id="chips">
+<div class="chips" id="chips" style="flex-wrap:nowrap;">
         <div class="chip on" data-t="creche_pub">🏛 Municipale</div>
         <div class="chip on" data-t="creche_assoc">🤝 Associative</div>
         <div class="chip on" data-t="creche_priv">🏢 Privée</div>
-        <div class="chip on" data-t="am">👶 Ass. mat. / MAM</div>
         <div class="chip on" data-t="halte">🎠 Halte / multi</div>
       </div>
       <div class="frow">
@@ -265,8 +263,6 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
 </div>
 
 <div class="toast" id="toast"></div>
-
-<script type="module" src="./js/main.js"></script>
 
 <!-- ── Modal détail nounous ───────────────────────────────── -->
 <div class="pn-modal-overlay" id="nounouModal" onclick="if(event.target===this)closeNounouModal()">
@@ -342,126 +338,9 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
   </div>
 </div>
 
-<!-- ── Modal Comparateur modes de garde ──────────────────── -->
-<div class="cmp-overlay" id="cmpOverlay" onclick="if(event.target===this)closeCmp()">
- <div class="cmp-modal">
 
-  <div class="cmp-hdr">
-   <div>
-    <h2>Comparer les modes de garde</h2>
-    <div class="cmp-hdr-sub">Coût net mensuel estimé · 2 avantages · 2 limites · pour un enfant &lt; 3 ans</div>
-   </div>
-   <button class="cmp-close" onclick="closeCmp()">✕</button>
-  </div>
-
-  <!-- Bandeau salaire -->
-  <div class="cmp-salary">
-   <label>Votre salaire</label>
-   <div class="salary-input-wrap">
-    <div class="salary-toggle">
-     <button id="btnNet" class="active" onclick="setSalaryMode('net')">Net</button>
-     <button id="btnBrut" onclick="setSalaryMode('brut')">Brut</button>
-    </div>
-    <input type="range" id="salarySlider" min="1200" max="10000" step="100" value="2800" oninput="updateCmp()">
-    <span class="salary-val" id="salaryVal">2 800 €</span>
-   </div>
-   <span class="cmp-aides-note">Aides : CMG, crédit d'impôt 50%, PSU inclus dans l'estimation</span>
-  </div>
-
-  <!-- Tableau -->
-  <div class="cmp-table-wrap">
-   <table class="cmp-table" id="cmpTable">
-    <thead>
-     <tr>
-      <th style="width:110px"></th>
-      <th class="mode-hdr"><span class="mode-badge" style="background:#d4e8d8;color:#1a5c2a">🏛 Crèche publique</span></th>
-      <th class="mode-hdr"><span class="mode-badge" style="background:#dde0f0;color:#2a3c7c">🏢 Crèche privée</span></th>
-      <th class="mode-hdr"><span class="mode-badge" style="background:#ddeece;color:#2e5010">🤝 Crèche assoc.</span></th>
-      <th class="mode-hdr"><span class="mode-badge" style="background:#fde8d8;color:#7a3a1a">👶 Ass. maternelle</span></th>
-      <th class="mode-hdr"><span class="mode-badge" style="background:#f5e8d8;color:#7a4a1a">🏠 Nounou partagée</span></th>
-     </tr>
-    </thead>
-    <tbody>
-     <tr>
-      <td class="row-label">Coût net / mois</td>
-      <td class="cost-cell" id="c-pub">–</td>
-      <td class="cost-cell" id="c-priv">–</td>
-      <td class="cost-cell" id="c-assoc">–</td>
-      <td class="cost-cell" id="c-am">–</td>
-      <td class="cost-cell" id="c-share">–</td>
-     </tr>
-     <tr>
-      <td class="row-label">Avantages</td>
-      <td class="mode-col">
-       <div class="pro">Barème CAF selon revenus</div>
-       <div class="pro" style="margin-top:.3rem">Encadrement professionnel réglementé</div>
-      </td>
-      <td class="mode-col">
-       <div class="pro">Places plus disponibles</div>
-       <div class="pro" style="margin-top:.3rem">Horaires étendus souvent</div>
-      </td>
-      <td class="mode-col">
-       <div class="pro">Tarification PSU (comme public)</div>
-       <div class="pro" style="margin-top:.3rem">Projet pédagogique participatif</div>
-      </td>
-      <td class="mode-col">
-       <div class="pro">Accueil individualisé à domicile</div>
-       <div class="pro" style="margin-top:.3rem">CMG + crédit impôt 50%</div>
-      </td>
-      <td class="mode-col">
-       <div class="pro">Coût divisé entre 2 familles</div>
-       <div class="pro" style="margin-top:.3rem">Socialisation dès le départ</div>
-      </td>
-     </tr>
-     <tr>
-      <td class="row-label">Limites</td>
-      <td class="mode-col">
-       <div class="con">Places très rares, liste d'attente longue</div>
-       <div class="con" style="margin-top:.3rem">Fermetures vacances scolaires</div>
-      </td>
-      <td class="mode-col">
-       <div class="con">Coût brut élevé avant aides</div>
-       <div class="con" style="margin-top:.3rem">Qualité très variable selon réseau</div>
-      </td>
-      <td class="mode-col">
-       <div class="con">Peu de places, liste d'attente</div>
-       <div class="con" style="margin-top:.3rem">Implication des parents requise</div>
-      </td>
-      <td class="mode-col">
-       <div class="con">Recherche longue, risque d'absence</div>
-       <div class="con" style="margin-top:.3rem">Vous êtes employeur (admin)</div>
-      </td>
-      <td class="mode-col">
-       <div class="con">Coordination complexe entre familles</div>
-       <div class="con" style="margin-top:.3rem">Arrêt si l'autre famille part</div>
-      </td>
-     </tr>
-     <tr>
-      <td class="row-label">Disponibilité</td>
-      <td class="mode-col" style="font-size:.72rem;color:#c85c1a;font-weight:600">⚠️ Très faible à Paris</td>
-      <td class="mode-col" style="font-size:.72rem;color:#4caf50;font-weight:600">✓ Plutôt bonne</td>
-      <td class="mode-col" style="font-size:.72rem;color:#c85c1a;font-weight:600">⚠️ Faible</td>
-      <td class="mode-col" style="font-size:.72rem;color:#f0a030;font-weight:600">~ Délai 1–3 mois</td>
-      <td class="mode-col" style="font-size:.72rem;color:#f0a030;font-weight:600">~ Délai 1–2 mois</td>
-     </tr>
-     <tr>
-      <td class="row-label">Démarches</td>
-      <td class="mode-col" style="font-size:.72rem;color:var(--muted)">Inscription mairie + crèche</td>
-      <td class="mode-col" style="font-size:.72rem;color:var(--muted)">Contact direct réseau</td>
-      <td class="mode-col" style="font-size:.72rem;color:var(--muted)">Inscription + réunions parents</td>
-      <td class="mode-col" style="font-size:.72rem;color:var(--muted)">Contrat + Pajemploi + CMG</td>
-      <td class="mode-col" style="font-size:.72rem;color:var(--muted)">Contrat partagé + Pajemploi</td>
-     </tr>
-    </tbody>
-   </table>
-  </div>
-
-  <div class="cmp-footer">
-   * Estimations basées sur le barème PSU CNAF 2024, le plafond CMG, et le crédit d'impôt services à la personne (50% des dépenses, plafond 3 500€/an/enfant). Les montants sont indicatifs — votre CAF calcule le montant exact selon votre situation complète. Salaire net mensuel saisi. Brut ≈ net ÷ 0,78.
-  </div>
-
- </div>
-</div>
+<script type="module" src="./js/main.js"></script>
+<script type="module" src="./js/bootstrap.js"></script>
 
 </body>
 </html>

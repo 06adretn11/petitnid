@@ -22,36 +22,37 @@ export const TL = {
 
 // 🏷 Classes badges
 export const TB = {
-  creche_pub:'tb-pub',
-  creche_assoc:'tb-assoc',
-  creche_priv:'tb-priv',
-  am:'tb-am',
-  halte:'tb-halte',
+  creche_pub:   'tb-pub',
+  creche_assoc: 'tb-assoc',
+  creche_priv:  'tb-priv',
+  am:           'tb-am',
+  halte:        'tb-halte',
 };
 
-// 🔵 Couleurs source
-export const SRC_RING  = {
-  EAJE:'#3a8abf',
-  OSM:'#c8a030',
-  PARIS:'#c030a0',
-  BOTH:'#9a40c0',
-  KNOWN:'#2d8a60'
+// 🔵 Couleurs source — ODS ajouté (données PMI officielles)
+export const SRC_RING = {
+  EAJE:  '#3a8abf',
+  OSM:   '#c8a030',
+  PARIS: '#c030a0',
+  BOTH:  '#9a40c0',
+  KNOWN: '#2d8a60',
+  ODS:   '#c8663a',   // orange rouille — données officielles PMI
 };
-
 export const SRC_BG = {
-  EAJE:'#d4e8f0',
-  OSM:'#fff0d4',
-  PARIS:'#f0d4e8',
-  BOTH:'#e8d4f0',
-  KNOWN:'#d4f0e4'
+  EAJE:  '#d4e8f0',
+  OSM:   '#fff0d4',
+  PARIS: '#f0d4e8',
+  BOTH:  '#e8d4f0',
+  KNOWN: '#d4f0e4',
+  ODS:   '#fde8d8',   // fond saumon clair
 };
-
 export const SRC_LABEL = {
-  EAJE:'OSM+',
-  OSM:'OpenStreetMap',
-  PARIS:'Paris Data',
-  BOTH:'Multi-sources',
-  KNOWN:'✓ Vérifié'
+  EAJE:  'OSM+',
+  OSM:   'OpenStreetMap',
+  PARIS: 'Paris Data',
+  BOTH:  'Multi-sources',
+  KNOWN: '✓ Vérifié',
+  ODS:   '✓ PMI officiel',  // badge affiché sur les cartes
 };
 
 // 🏢 Réseaux privés connus
