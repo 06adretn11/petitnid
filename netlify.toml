@@ -20,7 +20,7 @@
     #                 - overpass.kumi.systems      (miroir OSM)
     #                 - data.iledefrance.fr        (ODS 92/93)
     # ──────────────────────────────────────────────────────────
-    Content-Security-Policy = "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' https://api-adresse.data.gouv.fr https://overpass-api.de https://overpass.kumi.systems https://data.iledefrance.fr; frame-ancestors 'none'; object-src 'none'; base-uri 'self';"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com; connect-src 'self' https://api-adresse.data.gouv.fr https://overpass-api.de https://overpass.kumi.systems https://data.iledefrance.fr https://unpkg.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self';"
 
     # ── Autres headers de sécurité ────────────────────────────
     # Empêche l'intégration dans une iframe (clickjacking)
