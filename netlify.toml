@@ -1,0 +1,40 @@
+# ═══════════════════════════════════════════════════════════════
+# PetitNid — Configuration Netlify
+# Headers de sécurité HTTP pour toutes les pages
+# ═══════════════════════════════════════════════════════════════
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+
+    # ── Content Security Policy ────────────────────────────────
+    # Inventaire des sources externes autorisées :
+    #   script-src  : unpkg.com (Leaflet JS)
+    #   style-src   : unpkg.com (Leaflet CSS), fonts.googleapis.com
+    #   font-src    : fonts.gstatic.com (fichiers woff2 Google Fonts)
+    #   img-src     : *.tile.openstreetmap.org (tuiles carte Leaflet)
+    #                 data: (marqueurs Leaflet en base64)
+    #   connect-src : toutes les APIs fetch() de l'app
+    #                 - api-adresse.data.gouv.fr  (géocodage)
+    #                 - overpass-api.de            (OSM données)
+    #                 - overpass.kumi.systems      (miroir OSM)
+    #                 - data.iledefrance.fr        (ODS 92/93)
+    # ──────────────────────────────────────────────────────────
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self' https://api-adresse.data.gouv.fr https://overpass-api.de https://overpass.kumi.systems https://data.iledefrance.fr; frame-ancestors 'none'; object-src 'none'; base-uri 'self';"
+
+    # ── Autres headers de sécurité ────────────────────────────
+    # Empêche l'intégration dans une iframe (clickjacking)
+    X-Frame-Options = "DENY"
+
+    # Empêche le navigateur de deviner le type MIME
+    X-Content-Type-Options = "nosniff"
+
+    # N'envoie que l'origine (sans le chemin) dans le Referer
+    # aux sites externes — protège la vie privée des utilisateurs
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+    # Force HTTPS pour 1 an, propagé aux sous-domaines
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+
+    # Contrôle les infos navigateur envoyées aux iframes
+    Permissions-Policy = "geolocation=(self), camera=(), microphone=(), payment=()"
