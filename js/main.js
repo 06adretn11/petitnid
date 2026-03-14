@@ -82,8 +82,9 @@ let activeT = new Set([
 // suffisant pour passer une surcharge ponctuelle.
 // ═══════════════════════════════════════════
 const OVERPASS_SERVERS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
+  '/api/overpass',                                  // proxy Netlify — IPs serveur, moins de 504
+  'https://overpass-api.de/api/interpreter',        // fallback direct si proxy KO
+  'https://overpass.kumi.systems/api/interpreter',  // miroir fallback
 ];
 
 function overpassTimeout(radiusM) {
@@ -97,18 +98,20 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function overpassFetch(query, radiusM = 1000) {
   const timeoutMs = overpassTimeout(radiusM);
-  // Synchroniser le timeout Overpass (côté serveur) avec notre timeout JS
   const ovTimeout = Math.floor(timeoutMs / 1000) - 2;
   const timedQuery = query.replace(/\[timeout:\d+\]/, `[timeout:${ovTimeout}]`);
 
+  // Séquence : proxy Netlify → overpass-api.de direct → kumi.systems
+  // Si le proxy Netlify répond (cas normal), les deux fallbacks ne sont jamais appelés
+  const attempts = [
+    { server: OVERPASS_SERVERS[0], delay: 0    }, // proxy
+    { server: OVERPASS_SERVERS[1], delay: 1500 }, // direct
+    { server: OVERPASS_SERVERS[2], delay: 3000 }, // miroir
+  ];
+
   let lastError;
-  for (let i = 0; i < OVERPASS_SERVERS.length; i++) {
-    const server = OVERPASS_SERVERS[i];
-
-    // Délai de 2s avant le miroir — laisse le temps au premier serveur
-    // de se désaturer sans bloquer l'utilisateur trop longtemps
-    if (i > 0) await sleep(2000);
-
+  for (const { server, delay } of attempts) {
+    if (delay > 0) await sleep(delay);
     const ctrl = new AbortController();
     const tid  = setTimeout(() => ctrl.abort(), timeoutMs);
     try {
@@ -120,7 +123,7 @@ async function overpassFetch(query, radiusM = 1000) {
       });
       clearTimeout(tid);
       if (res.status === 504 || res.status === 429) {
-        lastError = new Error('Serveur cartographique surchargé. Réessayez dans quelques secondes.');
+        lastError = new Error('Serveur cartographique surchargé.');
         continue;
       }
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -128,11 +131,11 @@ async function overpassFetch(query, radiusM = 1000) {
     } catch (e) {
       clearTimeout(tid);
       lastError = e.name === 'AbortError'
-        ? new Error('Délai dépassé. Réessayez ou réduisez le rayon de recherche.')
+        ? new Error('Délai dépassé.')
         : e;
     }
   }
-  throw lastError ?? new Error('Serveurs cartographiques indisponibles. Réessayez dans quelques instants.');
+  throw lastError ?? new Error('Serveurs indisponibles.');
 }
 
 
@@ -315,8 +318,10 @@ async function runSearch() {
     updateUserLocation(currentGeo.lat, currentGeo.lng, currentGeo.label, radiusM);
     setAllDots('ok');
     ['eaje','osm','local'].forEach(k => {
-      document.getElementById('cnt-'+k).textContent = '(cache)';
-      document.getElementById('err-'+k).textContent = '';
+      const c1 = document.getElementById('cnt-'+k);
+      const e1 = document.getElementById('err-'+k);
+      if (c1) c1.textContent = '(cache)';
+      if (e1) e1.textContent = '';
     });
     render();
     toast(`⚡ Résultats instantanés (cache) — ${allData.length} établissements`);
@@ -329,8 +334,10 @@ async function runSearch() {
   setAllDots('loading');
   // Reset des compteurs sources
   ['eaje','osm','local'].forEach(k => {
-    document.getElementById('cnt-'+k).textContent = '…';
-    document.getElementById('err-'+k).textContent = '';
+    const cnt = document.getElementById('cnt-'+k);
+    const err = document.getElementById('err-'+k);
+    if (cnt) cnt.textContent = '…';
+    if (err) err.textContent = '';
   });
   setProgress(5);
   document.getElementById('lcount').textContent = 'Géocodage…';
@@ -377,17 +384,40 @@ async function runSearch() {
     if (hasODS) {
       applyDotResult('local', resLOCAL, localData.length);
     } else {
-      document.getElementById('dot-local').className   = 'sdot na';
-      document.getElementById('cnt-local').textContent = 'N/A';
+      const dl = document.getElementById('dot-local');
+      const cl = document.getElementById('cnt-local');
+      if (dl) dl.className   = 'sdot na';
+      if (cl) cl.textContent = 'N/A';
     }
 
-    // Message utilisateur si Overpass en timeout
+    // Message utilisateur si Overpass en échec
     const eajeOk = resEAJE.status === 'fulfilled';
     const osmOk  = resOSM.status  === 'fulfilled';
-    if (!eajeOk && !osmOk) {
-      toast('⚠️ Serveurs cartographiques surchargés — réessayez dans quelques secondes.');
+    if (!eajeOk && !osmOk && eajeData.length === 0 && osmData.length === 0 && localData.length === 0) {
+      // Echec total — aucun résultat : message prominent dans lbody avec bouton réessayer
+      document.getElementById('lbody').innerHTML = `
+        <div class="empty" style="padding:2rem 1.2rem;">
+          <div class="big">😕</div>
+          <p style="font-weight:700;color:#c8663a;margin-bottom:.5rem;">Serveurs surchargés</p>
+          <p style="margin-bottom:1.2rem;font-size:.82rem;line-height:1.6;">
+            Les serveurs cartographiques publics sont momentanément indisponibles.<br>
+            Cela arrive en journée — ce n'est pas lié à votre adresse.
+          </p>
+          <button onclick="document.getElementById('btnS').click()"
+            style="background:#2d4a3e;color:white;border:none;border-radius:8px;
+                   padding:.6rem 1.4rem;font-family:'DM Sans',sans-serif;
+                   font-size:.85rem;font-weight:600;cursor:pointer;">
+            🔄 Réessayer
+          </button>
+          <p style="margin-top:.8rem;font-size:.72rem;color:#aaa;">
+            Astuce : réduire le rayon de recherche améliore les chances de succès.
+          </p>
+        </div>`;
+      document.getElementById('lcount').textContent = '0 résultat';
+      setProgress(0);
+      return;
     } else if (!eajeOk || !osmOk) {
-      toast('⚠️ Un serveur était indisponible — résultats partiels. Réessayez pour compléter.');
+      toast('⚠️ Résultats partiels — un serveur était indisponible. Réessayez pour compléter.');
     }
 
     setProgress(85);
@@ -574,6 +604,119 @@ function amCardHTML(rpe, userLat, userLng, radiusM) {
 
 let currentGeo = null;
 
+// ── Modal détail card — mobile uniquement ────────────────────
+function openCardModal(r) {
+  // Supprimer une éventuelle modal précédente
+  const existing = document.getElementById('card-modal-overlay');
+  if (existing) existing.remove();
+
+  // TC/TL/TB/SRC_* sont importés directement depuis 01_config.js
+  const itinUrl  = `https://www.google.com/maps/dir/?api=1&destination=${r.lat},${r.lng}`;
+  const ring     = SRC_RING[r.sourceGroup] || '#888';
+  const bg       = SRC_BG[r.sourceGroup]   || '#eee';
+  const lbl      = SRC_LABEL[r.sourceGroup] || r.sourceGroup;
+  const typeLabel= TL[r.type] || r.type || '';
+  const typeBadge= TB[r.type] || '';
+  const walk     = r.dist ? `${Math.round(r.dist * 1000 / 80)} min à pied` : '';
+
+  const placesStr = r.places
+    ? (r.placesEst ? `${r.placesLabel} places*` : `${r.places} places`)
+    : 'places N/C';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'card-modal-overlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:7000;
+    background:rgba(0,0,0,.45);
+    display:flex;align-items:flex-end;justify-content:center;
+    padding:0;
+  `;
+
+  overlay.innerHTML = `
+    <div id="card-modal" style="
+      background:white;border-radius:16px 16px 0 0;
+      width:100%;max-height:80vh;overflow-y:auto;
+      padding:1.1rem 1.2rem 2rem;
+      box-shadow:0 -4px 32px rgba(0,0,0,.18);
+      font-family:'DM Sans',sans-serif;
+    ">
+      <!-- Poignée -->
+      <div style="width:36px;height:4px;background:#e0e0e0;border-radius:2px;margin:0 auto .9rem;"></div>
+
+      <!-- Type + distance -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+        <span class="tbadge ${typeBadge}" style="font-size:.7rem;">${typeLabel}</span>
+        ${walk ? `<span style="font-size:.72rem;color:#888;">🚶 ${walk}</span>` : ''}
+      </div>
+
+      <!-- Nom -->
+      <div style="font-family:'Playfair Display',serif;font-size:1.05rem;color:#2d4a3e;font-weight:700;margin-bottom:.3rem;line-height:1.3;">
+        ${r.name}
+      </div>
+
+      <!-- Adresse -->
+      ${r.address ? `<div style="font-size:.78rem;color:#888;margin-bottom:.6rem;">📍 ${r.address}</div>` : ''}
+
+      <!-- Méta -->
+      <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:.8rem;">
+        ${r.phone   ? `<span style="font-size:.8rem;color:#444;">📞 <a href="tel:${r.phone}" style="color:#2d4a3e;font-weight:600;text-decoration:none;">${r.phone}</a></span>` : ''}
+        ${r.email   ? `<span style="font-size:.8rem;color:#444;">✉️ <a href="mailto:${r.email}" style="color:#2d4a3e;text-decoration:none;">${r.email}</a></span>` : ''}
+        <span style="font-size:.8rem;color:#444;">👶 ${placesStr}</span>
+        ${r.hours   ? `<span style="font-size:.8rem;color:#444;">⏰ ${r.hours}</span>` : ''}
+        ${r.website ? `<span style="font-size:.8rem;"><a href="${r.website}" target="_blank" style="color:#2d4a3e;font-weight:600;">🌐 Site web</a></span>` : ''}
+      </div>
+
+      <!-- Badge source -->
+      <div style="margin-bottom:1rem;">
+        <span style="font-size:.65rem;font-weight:700;padding:.15rem .45rem;border-radius:4px;background:${bg};color:${ring};">${lbl}</span>
+      </div>
+
+      <!-- Boutons action -->
+      <div style="display:flex;flex-direction:column;gap:.55rem;">
+        <button onclick="showOnMap('${r.id}', ${r.lat}, ${r.lng})" style="
+          background:#2d4a3e;color:white;border:none;border-radius:9px;
+          padding:.7rem 1rem;font-family:'DM Sans',sans-serif;
+          font-size:.85rem;font-weight:600;cursor:pointer;text-align:center;
+        ">🗺 Voir sur la carte</button>
+        <a href="${itinUrl}" target="_blank" style="
+          display:block;text-align:center;background:#f5f8f5;color:#2d4a3e;
+          border:1.5px solid #c8d8c8;border-radius:9px;
+          padding:.65rem 1rem;font-size:.85rem;font-weight:600;text-decoration:none;
+        ">→ Itinéraire Google Maps</a>
+      </div>
+    </div>
+  `;
+
+  // Fermer au clic sur le fond
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeCardModal();
+  });
+
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCardModal() {
+  const el = document.getElementById('card-modal-overlay');
+  if (el) el.remove();
+  document.body.style.overflow = '';
+}
+
+function showOnMap(id, lat, lng) {
+  closeCardModal();
+  const mapContainer = document.getElementById('map-container');
+  const listWrap     = document.querySelector('.listwrap');
+  const toggleBtn    = document.getElementById('mapToggle');
+  mapContainer.classList.add('visible');
+  listWrap.classList.add('hidden');
+  if (toggleBtn) toggleBtn.textContent = '📋 Voir la liste';
+  setTimeout(() => {
+    window.dispatchEvent(new Event('resize'));
+    map.setView([lat, lng], 17);
+    openMarkerById(id);
+  }, 80);
+}
+
 function render() {
   const d = filtered(allData, activeT);
   document.getElementById('lcount').innerHTML = allData.length
@@ -598,7 +741,16 @@ function render() {
     body.querySelectorAll('.card').forEach(x => x.classList.remove('active'));
     c.classList.add('active');
     const r = allData.find(x => x.id === c.dataset.id);
-    if (r) { map.setView([r.lat, r.lng], 17); openMarkerById(r.id); }
+    if (!r) return;
+
+    if (window.innerWidth <= 768) {
+      // Mobile : ouvrir une modal par-dessus la liste
+      openCardModal(r);
+    } else {
+      // Desktop : comportement existant — centrer carte + popup Leaflet
+      map.setView([r.lat, r.lng], 17);
+      openMarkerById(r.id);
+    }
   }));
   renderMarkers(d);
 }
@@ -609,13 +761,19 @@ function render() {
 // ═══════════════════════════════════════════
 function setProgress(p) { document.getElementById('prog').style.width = p+'%'; }
 function setAllDots(state) {
-  ['eaje','osm','local'].forEach(k => document.getElementById('dot-'+k).className='sdot '+state);
+  ['eaje','osm','local'].forEach(k => {
+    const el = document.getElementById('dot-'+k);
+    if (el) el.className = 'sdot ' + state;
+  });
 }
 function applyDotResult(key, result, count) {
-  const ok = result.status === 'fulfilled';
-  document.getElementById('dot-'+key).className   = 'sdot ' + (ok ? 'ok' : 'err');
-  document.getElementById('cnt-'+key).textContent = ok ? count + ' résultats' : '0';
-  document.getElementById('err-'+key).textContent = ok ? '' : (result.reason?.message||'Erreur').slice(0,50);
+  const ok  = result.status === 'fulfilled';
+  const dot = document.getElementById('dot-'+key);
+  const cnt = document.getElementById('cnt-'+key);
+  const err = document.getElementById('err-'+key);
+  if (dot) dot.className   = 'sdot ' + (ok ? 'ok' : 'err');
+  if (cnt) cnt.textContent = ok ? count + ' résultats' : '0';
+  if (err) err.textContent = ok ? '' : (result.reason?.message||'Erreur').slice(0,50);
 }
 let tT;
 function toast(msg) {
@@ -627,3 +785,5 @@ function toast(msg) {
 window.openNounouModal  = openNounouModal;
 window.closeNounouModal = closeNounouModal;
 window.openRPEModal     = openRPEModal;
+window.showOnMap        = showOnMap;
+window.closeCardModal   = closeCardModal;

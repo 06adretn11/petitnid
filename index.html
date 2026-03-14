@@ -35,28 +35,13 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
 .bgo:hover{background:var(--forest-l);}
 .bgo:disabled{opacity:.5;cursor:not-allowed;}
 
-/* Source panel */
-.srcpanel{padding:0.5rem 1rem;border-bottom:1px solid var(--sand);background:#f5f8f6;}
-.srcrow{display:flex;align-items:center;gap:0.45rem;font-size:0.67rem;margin-bottom:0.2rem;}
-.srcrow:last-child{margin-bottom:0;}
-.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .3s;}
-.sdot.idle   {background:#ccc;}
-.sdot.loading{background:#f0c040;animation:blink .8s ease infinite;}
-.sdot.ok     {background:#4caf50;}
-.sdot.err    {background:#e57373;}
-.sdot.na     {background:#ddd;}
-@keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
-.sname{color:var(--muted);font-weight:600;min-width:118px;}
-.scount{color:var(--forest);font-weight:700;}
-.serr{color:#c85c1a;font-style:italic;font-size:.63rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;}
-
 .progress-bar{height:3px;background:var(--sand);}
 .progress-fill{height:100%;background:var(--forest);width:0%;transition:width .4s ease;}
 
 /* Filtres */
 .filters{padding:0.65rem 1rem;border-bottom:1px solid var(--sand);}
-.chips{display:flex;gap:0.28rem;flex-wrap:wrap;margin-bottom:0.45rem;}
-.chip{padding:.22rem .58rem;border-radius:20px;border:1.5px solid var(--sand);font-size:.71rem;font-weight:600;cursor:pointer;transition:all .15s;background:var(--cream);color:var(--muted);white-space:nowrap;}
+.chips{display:flex;gap:0.28rem;flex-wrap:nowrap;margin-bottom:0.45rem;}
+.chip{padding:.22rem .58rem;border-radius:20px;border:1.5px solid var(--sand);font-size:.71rem;font-weight:600;cursor:pointer;transition:all .15s;background:var(--cream);color:var(--muted);white-space:nowrap;flex:1;text-align:center;}
 .chip:hover{border-color:var(--forest);color:var(--forest);}
 .chip.on{color:var(--cream);}
 .chip[data-t="creche_pub"].on  {background:#2a7a45;border-color:#2a7a45;}
@@ -127,7 +112,7 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
 .pn-btn .pn-badge{font-size:.62rem;font-weight:700;padding:.1rem .38rem;border-radius:4px;white-space:nowrap;}
 
 /* ── Comparateur modal ─────────────────────── */
-.cmp-overlay{display: none ;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center;padding:1rem;}
+.cmp-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9000;align-items:center;justify-content:center;padding:1rem;}
 .cmp-overlay.open{display:flex;}
 .cmp-modal{background:var(--white);border-radius:16px;width:min(920px,96vw);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 12px 60px rgba(0,0,0,.25);overflow:hidden;}
 .cmp-hdr{padding:1rem 1.4rem;border-bottom:1px solid var(--sand);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--forest);}
@@ -136,8 +121,6 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
 .cmp-close{background:none;border:none;color:var(--cream);font-size:1.3rem;cursor:pointer;padding:.2rem .4rem;border-radius:4px;opacity:.7;}
 .cmp-close:hover{opacity:1;background:rgba(255,255,255,.1);}
 .cmp-body{overflow-y:auto;flex:1;}
-
-/* Bandeau salaire */
 .cmp-salary{padding:.85rem 1.4rem;background:#f5f8f5;border-bottom:1px solid var(--sand);display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
 .cmp-salary label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
 .salary-input-wrap{display:flex;align-items:center;gap:.4rem;}
@@ -147,8 +130,6 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
 .salary-toggle button{padding:.25rem .65rem;font-size:.68rem;font-weight:700;border:none;cursor:pointer;background:var(--cream);color:var(--muted);transition:all .15s;}
 .salary-toggle button.active{background:var(--forest);color:var(--cream);}
 .cmp-aides-note{font-size:.67rem;color:var(--muted);margin-left:.5rem;}
-
-/* Tableau comparatif */
 .cmp-table-wrap{padding:1rem 1.4rem 1.4rem;overflow-x:auto;}
 .cmp-table{width:100%;border-collapse:collapse;min-width:640px;}
 .cmp-table th{padding:.5rem .75rem;font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;border-bottom:2px solid var(--sand);white-space:nowrap;}
@@ -170,13 +151,126 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
 .hcta{background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);color:var(--cream);font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:700;padding:.32rem .85rem;border-radius:20px;cursor:pointer;white-space:nowrap;transition:all .18s;letter-spacing:.02em;}
 .hcta:hover{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.45);}
 
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:#1a1a1a;color:white;padding:.6rem 1.2rem;border-radius:8px;font-size:.8rem;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9999;white-space:nowrap;}
+.toast.show{opacity:1;}
+
+/* ── Responsive mobile ─────────────────────────────────────── */
+/* Bouton toggle carte/liste — masqué sur desktop */
+.map-toggle{display:none;}
+
+@media (max-width:768px){
+
+  /* Layout : colonne unique au lieu de 2 colonnes */
+  .app{
+    display:flex;
+    flex-direction:column;
+    height:auto;
+    min-height:calc(100vh - 60px);
+  }
+
+  /* Sidebar : hauteur auto, plus d'overflow caché */
+  .sidebar{
+    overflow:visible;
+    flex-shrink:0;
+  }
+
+  /* Zone liste : hauteur fixe avec scroll interne */
+  .listwrap{
+    max-height:50vh;
+    overflow-y:auto;
+  }
+
+  /* Carte : masquée par défaut sur mobile, affichée via toggle */
+  #map-container{
+    height:45vh;
+    min-height:260px;
+    position:relative;
+    display:none;
+  }
+  #map-container.visible{display:block;}
+  #map{height:100%;}
+
+  /* Légendes carte : réduites sur mobile */
+  .legend,.src-legend{
+    display:none;
+  }
+
+  /* Chips filtres : scroll horizontal sur mobile */
+  .chips{
+    overflow-x:auto;
+    flex-wrap:nowrap;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{flex-shrink:0;flex:none;}
+
+  /* Barre de recherche : champ adresse pleine largeur */
+  .irow{flex-wrap:wrap;gap:.4rem;}
+  .ainput{min-width:0;flex:1 1 100%;}
+  .rsel,.bgo{flex:1;}
+
+  /* Header : masquer le comptage sur très petits écrans */
+  .hinfo{display:none;}
+
+  /* Bouton toggle carte/liste — visible sur mobile */
+  .map-toggle{
+    display:block;
+    width:100%;
+    padding:.55rem 1rem;
+    background:var(--forest-l);
+    color:var(--cream);
+    border:none;
+    font-family:'DM Sans',sans-serif;
+    font-size:.82rem;
+    font-weight:600;
+    cursor:pointer;
+    text-align:center;
+    flex-shrink:0;
+    letter-spacing:.02em;
+  }
+
+  /* Toggle : liste visible par défaut, carte masquée */
+  .listwrap.hidden{display:none;}
+
+  /* Agrandir les zones de tap */
+  .chip,.bgo,.rsel,.fsel,.cbtn,.citin,.pn-close,.cmp-close{
+    min-height:44px;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .chip{min-height:36px;} /* chips un peu plus petits */
+
+  /* Comparateur : plein écran + accordéons sur mobile */
+  .cmp-modal{
+    width:100vw;
+    max-height:100vh;
+    border-radius:0;
+  }
+  /* Masquer le tableau desktop sur mobile */
+  .cmp-table-wrap{ display:none; }
+  /* Afficher les accordéons mobiles */
+  .cmp-accord-list{ display:flex !important; }
+
+  /* Barre salaire : empilement vertical */
+  .cmp-salary{ flex-direction:column; align-items:stretch; gap:.5rem; }
+  .salary-input-wrap{ flex-direction:column; align-items:stretch; gap:.5rem; }
+  .cmp-salary input[type=range]{ width:100%; }
+  /* Boutons Net/Brut bien visibles */
+  .salary-toggle{ align-self:flex-start; }
+  .salary-toggle button{ padding:.4rem 1rem; font-size:.8rem; min-height:36px; }
+  /* Valeur salaire bien lisible */
+  .salary-val{ font-size:1rem; min-width:unset; }
+}
 </style>
 </head>
 <body>
 
 <header>
   <div class="logo">Petit<span>Nid</span></div>
-<button class="hcta">⚖️ Comparer les modes de garde</button>
+  <button class="hcta">⚖️ Comparer les modes de garde</button>
   <div class="hinfo">
     <strong id="hcount">–</strong> établissements ·
     <span id="hbreakdown" style="opacity:.7">–</span>
@@ -201,13 +295,17 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
     </div>
     <div class="progress-bar"><div class="progress-fill" id="prog"></div></div>
 
-<div class="srcpanel" style="display:none">
-      <div class="srcrow"><div class="sdot idle" id="dot-eaje"></div><span class="sname">OSM+</span><span class="scount" id="cnt-eaje">–</span><span class="serr" id="err-eaje"></span></div>
-      <div class="srcrow"><div class="sdot idle" id="dot-osm"></div><span class="sname">OpenStreetMap</span><span class="scount" id="cnt-osm">–</span><span class="serr" id="err-osm"></span></div>
-      <div class="srcrow"><div class="sdot idle" id="dot-local"></div><span class="sname" id="lbl-local">Source locale</span><span class="scount" id="cnt-local">–</span><span class="serr" id="err-local"></span></div>    </div>
+    <!-- Panneau sources masqué — données toujours actives en JS,
+         juste non affichées pour simplifier l'interface -->
+    <div style="display:none" aria-hidden="true">
+      <div id="dot-eaje"></div><span id="cnt-eaje"></span><span id="err-eaje"></span>
+      <div id="dot-osm"></div><span id="cnt-osm"></span><span id="err-osm"></span>
+      <div id="dot-paris"></div><span id="cnt-paris"></span><span id="err-paris"></span>
+    </div>
 
     <div class="filters">
-<div class="chips" id="chips" style="flex-wrap:nowrap;">
+      <!-- 4 chips sur une seule ligne, sans Ass. mat. -->
+      <div class="chips" id="chips">
         <div class="chip on" data-t="creche_pub">🏛 Municipale</div>
         <div class="chip on" data-t="creche_assoc">🤝 Associative</div>
         <div class="chip on" data-t="creche_priv">🏢 Privée</div>
@@ -231,7 +329,7 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
     <div class="listwrap">
       <div class="listhdr">
         <span id="lcount">Lancez une recherche…</span>
-        <span id="lspin" style="display:none"><span class="spin"></span>Chargement…</span>
+        <span id="lspin" style="display:none">Chargement…</span>
       </div>
       <div id="lbody">
         <div class="empty"><div class="big">🗺</div><p>Entrez votre adresse<br>et cliquez sur Chercher.</p></div>
@@ -240,9 +338,10 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
         * Estimation réglementaire — donnée exacte non disponible dans les bases publiques
       </div>
     </div>
+    <button class="map-toggle" id="mapToggle" onclick="toggleMapMobile()">🗺 Voir la carte</button>
   </div>
 
-  <div style="position:relative;">
+  <div id="map-container" style="position:relative;">
     <div id="map"></div>
     <div class="legend">
       <div class="ltitle">Type de garde</div>
@@ -271,74 +370,85 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
       <h3>🏠 Trouver une nounou à domicile</h3>
       <button class="pn-close" onclick="closeNounouModal()">✕</button>
     </div>
-
-    <!-- Section 1 : Contexte rapide -->
     <div class="pn-section">
       <h4>📋 Ce qu'il faut savoir</h4>
       <p>La garde à domicile n'est pas réglementée par agrément — aucun fichier public n'existe. Les professionnelles se trouvent via des plateformes, le bouche-à-oreille ou des agences. Vous êtes employeur direct : cotisations via <strong>Pajemploi</strong> (URSSAF), crédit d'impôt de 50% des frais.</p>
     </div>
-
-    <!-- Section 2 : Plateformes en ligne -->
     <div class="pn-section">
       <h4>💻 Plateformes en ligne — modèles économiques</h4>
       <div class="pn-btns">
         <a href="https://www.yoopala.com" target="_blank" class="pn-btn" style="background:#eef4fb;border-color:#c0d4ec;color:#1a3a6a">
           <span>
             <strong>Yoopala</strong><br>
-            <span style="font-size:.67rem;font-weight:400;color:#555">Abonnement famille ~29€/mois · profils vérifiés · mise en relation directe. Option "service complet" avec gestion admin.</span>
+            <span style="font-size:.67rem;font-weight:400;color:#555">Abonnement famille ~29€/mois · profils vérifiés · mise en relation directe.</span>
           </span>
           <span class="pn-badge" style="background:#dce8f8;color:#1a3a6a">Abonnement</span>
         </a>
         <a href="https://www.nounoutop.com" target="_blank" class="pn-btn" style="background:#fef6ec;border-color:#f0d8a8;color:#7a4a00">
           <span>
             <strong>Nounou Top</strong><br>
-            <span style="font-size:.67rem;font-weight:400;color:#555">Gratuit pour consulter · paiement à la mise en relation (~15–30€). Annonces de particuliers, peu de vérification.</span>
+            <span style="font-size:.67rem;font-weight:400;color:#555">Gratuit pour consulter · paiement à la mise en relation (~15–30€).</span>
           </span>
           <span class="pn-badge" style="background:#fde8c0;color:#7a4a00">À l'acte</span>
         </a>
         <a href="https://www.care.com/fr-fr" target="_blank" class="pn-btn" style="background:#f0faf0;border-color:#b0d8b0;color:#1a5a1a">
           <span>
             <strong>Care.com</strong><br>
-            <span style="font-size:.67rem;font-weight:400;color:#555">Abonnement ~20€/mois · large base internationale · vérification d'identité. Attention : qualité variable, nombreux profils inactifs.</span>
+            <span style="font-size:.67rem;font-weight:400;color:#555">Abonnement ~20€/mois · large base · vérification d'identité.</span>
           </span>
           <span class="pn-badge" style="background:#d0f0d0;color:#1a5a1a">Abonnement</span>
         </a>
       </div>
     </div>
-
-    <!-- Section 3 : Réseau & gratuit -->
     <div class="pn-section">
       <h4>🤝 Trouver gratuitement — bouche-à-oreille & réseaux</h4>
-      <p><strong>Groupes Facebook locaux</strong> — cherchez "Nounous [votre arrondissement]" ou "Parents [arrondissement] Paris". Très actifs dans les 11e, 19e, 20e.</p>
-      <p><strong>WhatsApp de copropriété ou d'école</strong> — la recommandation directe reste la source n°1 de confiance.</p>
+      <p><strong>Groupes Facebook locaux</strong> — cherchez "Nounous [votre arrondissement]".</p>
+      <p><strong>WhatsApp de copropriété ou d'école</strong> — la recommandation directe reste la source n°1.</p>
       <p><strong>Panneau d'affichage</strong> de la crèche, école maternelle ou PMI de votre quartier.</p>
-      <p><strong>Pôle Emploi</strong> — des candidats enregistrés comme "assistants de vie aux familles" cherchent activement des postes de garde.</p>
+      <p><strong>Pôle Emploi</strong> — des candidats "assistants de vie aux familles" cherchent activement.</p>
     </div>
-
-    <!-- Section 4 : Agences privées -->
     <div class="pn-section">
       <h4>🏢 Agences privées de placement</h4>
-      <p>Pour un recrutement sécurisé avec vérification approfondie du profil (références, casier, expérience). Coût : <strong>1 à 3 mois de salaire</strong> en frais de placement (non remboursé si rupture avant 3 mois en général).</p>
+      <p>Recrutement sécurisé avec vérification approfondie. Coût : <strong>1 à 3 mois de salaire</strong> en frais de placement.</p>
       <div class="pn-btns">
         <a href="https://www.babychou.com" target="_blank" class="pn-btn" style="background:#f8f4ff;border-color:#d8c8f0;color:#4a2a8a">
-          <span><strong>Babychou Services</strong> <span style="font-size:.67rem;font-weight:400;color:#666">· réseau national, nounous salariées de l'agence ou mise en relation</span></span>
+          <span><strong>Babychou Services</strong> <span style="font-size:.67rem;font-weight:400;color:#666">· réseau national</span></span>
           <span class="pn-badge" style="background:#ead8f8;color:#4a2a8a">Agence</span>
         </a>
         <a href="https://www.hopandfamily.com" target="_blank" class="pn-btn" style="background:#f8f4ff;border-color:#d8c8f0;color:#4a2a8a">
-          <span><strong>Hop and Family</strong> <span style="font-size:.67rem;font-weight:400;color:#666">· agence parisienne spécialisée garde + au pair, sélection rigoureuse</span></span>
+          <span><strong>Hop and Family</strong> <span style="font-size:.67rem;font-weight:400;color:#666">· agence parisienne spécialisée</span></span>
           <span class="pn-badge" style="background:#ead8f8;color:#4a2a8a">Agence</span>
         </a>
         <a href="https://www.bonne-nounou.com" target="_blank" class="pn-btn" style="background:#f8f4ff;border-color:#d8c8f0;color:#4a2a8a">
-          <span><strong>Bonne Nounou</strong> <span style="font-size:.67rem;font-weight:400;color:#666">· placement garde à domicile à Paris, frais à la mise en relation</span></span>
+          <span><strong>Bonne Nounou</strong> <span style="font-size:.67rem;font-weight:400;color:#666">· placement à Paris</span></span>
           <span class="pn-badge" style="background:#ead8f8;color:#4a2a8a">Agence</span>
         </a>
       </div>
-      <p style="margin-top:.5rem;font-size:.67rem;color:#aaa">Avec une agence, la nounou peut être salariée de l'agence (pas de démarches employeur) ou mise en relation (vous restez employeur direct).</p>
     </div>
   </div>
 </div>
 
-
+<script>
+// Toggle carte / liste sur mobile
+// Par défaut sur mobile : liste visible, carte masquée
+function toggleMapMobile() {
+  const mapC = document.getElementById('map-container');
+  const list = document.querySelector('.listwrap');
+  const btn  = document.getElementById('mapToggle');
+  const showingMap = mapC.classList.contains('visible');
+  if (showingMap) {
+    mapC.classList.remove('visible');
+    list.classList.remove('hidden');
+    btn.textContent = '🗺 Voir la carte';
+  } else {
+    mapC.classList.add('visible');
+    list.classList.add('hidden');
+    btn.textContent = '📋 Voir la liste';
+    // Forcer Leaflet à recalculer la taille après affichage
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+  }
+}
+</script>
 <script type="module" src="./js/main.js"></script>
 <script type="module" src="./js/bootstrap.js"></script>
 

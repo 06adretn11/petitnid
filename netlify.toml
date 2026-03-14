@@ -3,6 +3,10 @@
 # Headers de sécurité HTTP pour toutes les pages
 # ═══════════════════════════════════════════════════════════════
 
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
 [[headers]]
   for = "/*"
   [headers.values]
