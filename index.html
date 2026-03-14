@@ -428,27 +428,6 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
   </div>
 </div>
 
-<script>
-// Toggle carte / liste sur mobile
-// Par défaut sur mobile : liste visible, carte masquée
-function toggleMapMobile() {
-  const mapC = document.getElementById('map-container');
-  const list = document.querySelector('.listwrap');
-  const btn  = document.getElementById('mapToggle');
-  const showingMap = mapC.classList.contains('visible');
-  if (showingMap) {
-    mapC.classList.remove('visible');
-    list.classList.remove('hidden');
-    btn.textContent = '🗺 Voir la carte';
-  } else {
-    mapC.classList.add('visible');
-    list.classList.add('hidden');
-    btn.textContent = '📋 Voir la liste';
-    // Forcer Leaflet à recalculer la taille après affichage
-    setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
-  }
-}
-</script>
 <script type="module" src="./js/main.js"></script>
 <script type="module" src="./js/bootstrap.js"></script>
 
