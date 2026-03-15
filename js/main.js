@@ -403,7 +403,7 @@ async function runSearch() {
             Les serveurs cartographiques publics sont momentanément indisponibles.<br>
             Cela arrive en journée — ce n'est pas lié à votre adresse.
           </p>
-          <button onclick="document.getElementById('btnS').click()"
+          <button id="btnRetry"
             style="background:#2d4a3e;color:white;border:none;border-radius:8px;
                    padding:.6rem 1.4rem;font-family:'DM Sans',sans-serif;
                    font-size:.85rem;font-weight:600;cursor:pointer;">
@@ -415,6 +415,9 @@ async function runSearch() {
         </div>`;
       document.getElementById('lcount').textContent = '0 résultat';
       setProgress(0);
+      // Brancher le bouton réessayer
+      const retryBtn = document.getElementById('btnRetry');
+      if (retryBtn) retryBtn.addEventListener('click', () => document.getElementById('btnS').click());
       return;
     } else if (!eajeOk || !osmOk) {
       toast('⚠️ Résultats partiels — un serveur était indisponible. Réessayez pour compléter.');
@@ -502,7 +505,7 @@ function ensureRPEModal() {
     <div style="background:#fff;border-radius:14px;max-width:420px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.18);overflow:hidden;font-family:'DM Sans',sans-serif">
       <div style="background:#c8663a;padding:.8rem 1.1rem;display:flex;align-items:center;justify-content:space-between">
         <div style="color:white;font-weight:800;font-size:.9rem">👶 Relais Petite Enfance</div>
-        <button onclick="document.getElementById('rpe-modal').style.display='none'"
+        <button id="rpeClose"
           style="background:none;border:none;color:white;font-size:1.2rem;cursor:pointer;line-height:1;opacity:.85">✕</button>
       </div>
       <div style="padding:1rem 1.1rem;overflow-y:auto;max-height:70vh">
@@ -542,11 +545,18 @@ function openRPEModal(rpe, amZone, placesZone, radiusM) {
       ~${amZone} AM agréées · ~${placesZone} places théoriques dans un rayon de ${radLabel}
     </div>`;
   document.getElementById('rpe-modal').style.display = 'flex';
+  // Brancher fermeture (l'élément vient d'être créé ou existait déjà)
+  const rpeCloseBtn = document.getElementById('rpeClose');
+  if (rpeCloseBtn) {
+    rpeCloseBtn.replaceWith(rpeCloseBtn.cloneNode(true)); // reset listeners
+    document.getElementById('rpeClose').addEventListener('click', () => {
+      document.getElementById('rpe-modal').style.display = 'none';
+    });
+  }
 }
 
 function nounouCardHTML() {
   return `<div class="card nounou-card" id="nounou-block"
-    onclick="openNounouModal()"
     style="border:2px solid #9a6a3a;background:linear-gradient(135deg,#fdf8f2 0%,#fff 100%)">
     <div class="ctop" style="margin-bottom:.2rem">
       <span class="tbadge" style="background:#f5e8d8;color:#7a4a1a;font-size:.7rem;padding:.18rem .55rem">🏠 Garde à domicile</span>
@@ -576,7 +586,7 @@ function amCardHTML(rpe, userLat, userLng, radiusM) {
   const radLabel   = radiusM >= 1000 ? (radiusM/1000)+'km' : radiusM+'m';
   return `<div class="card am-card" id="am-block"
     style="border-left:4px solid #c8663a;background:#fff8f4;cursor:pointer"
-    onclick="openRPEModal(window._currentRPE, ${amZone}, ${placesZone}, ${radiusM})">
+    data-rpe-zone="${amZone}" data-rpe-places="${placesZone}" data-rpe-radius="${radiusM}">
     <div class="ctop" style="margin-bottom:.2rem">
       <span class="tbadge tb-am">👶 Ass. maternelles · ${rpe.arr.join('/')}e</span>
       <span style="font-size:.65rem;color:#c8663a;font-weight:600;white-space:nowrap">ℹ️ En savoir +</span>
@@ -673,7 +683,7 @@ function openCardModal(r) {
 
       <!-- Boutons action -->
       <div style="display:flex;flex-direction:column;gap:.55rem;">
-        <button onclick="showOnMap('${r.id}', ${r.lat}, ${r.lng})" style="
+        <button id="cardModalMapBtn" data-id="${r.id}" data-lat="${r.lat}" data-lng="${r.lng}" style="
           background:#2d4a3e;color:white;border:none;border-radius:9px;
           padding:.7rem 1rem;font-family:'DM Sans',sans-serif;
           font-size:.85rem;font-weight:600;cursor:pointer;text-align:center;
@@ -694,6 +704,14 @@ function openCardModal(r) {
 
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
+
+  // Brancher le bouton "Voir sur la carte"
+  const mapBtn = document.getElementById('cardModalMapBtn');
+  if (mapBtn) {
+    mapBtn.addEventListener('click', () => {
+      showOnMap(mapBtn.dataset.id, +mapBtn.dataset.lat, +mapBtn.dataset.lng);
+    });
+  }
 }
 
 function closeCardModal() {
@@ -737,6 +755,24 @@ function render() {
   }
   const nounouHtml = allData.length ? nounouCardHTML() : '';
   body.innerHTML = amHtml + nounouHtml + d.map(cardHTML).join('');
+
+  // Brancher nounouCard
+  const nounouBlock = document.getElementById('nounou-block');
+  if (nounouBlock) nounouBlock.addEventListener('click', openNounouModal);
+
+  // Brancher AM card
+  const amBlock = document.getElementById('am-block');
+  if (amBlock) {
+    amBlock.addEventListener('click', () => {
+      openRPEModal(
+        window._currentRPE,
+        +amBlock.dataset.rpeZone,
+        +amBlock.dataset.rpePlaces,
+        +amBlock.dataset.rpeRadius
+      );
+    });
+  }
+
   body.querySelectorAll('.card').forEach(c => c.addEventListener('click', () => {
     body.querySelectorAll('.card').forEach(x => x.classList.remove('active'));
     c.classList.add('active');

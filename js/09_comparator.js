@@ -27,14 +27,29 @@ export function initComparator() {
   // ── 3. Branchement du slider ─────────────────────────────
   document.getElementById('salarySlider').addEventListener('input', updateCmp);
 
-  // ── 4. Premier calcul ────────────────────────────────────
+  // ── 4. Bouton fermer ──────────────────────────────────────
+  document.getElementById('cmpClose').addEventListener('click', closeCmp);
+
+  // ── 5. Boutons Net / Brut ─────────────────────────────────
+  document.getElementById('btnNet').addEventListener('click',  () => setSalaryMode('net'));
+  document.getElementById('btnBrut').addEventListener('click', () => setSalaryMode('brut'));
+
+  // ── 6. Boutons accordéon mobile ───────────────────────────
+  document.querySelectorAll('[data-accord]').forEach(btn => {
+    btn.addEventListener('click', () => toggleCmpAccord(btn.dataset.accord));
+  });
+
+  // ── 7. Fermer en cliquant sur le fond ─────────────────────
+  document.getElementById('cmpOverlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('cmpOverlay')) closeCmp();
+  });
+
+  // ── 8. Premier calcul ────────────────────────────────────
   updateCmp();
 
-  // ── 5. Exposition sur window (pour les onclick dans le HTML injecté)
-  window.closeCmp        = closeCmp;
-  window.setSalaryMode   = setSalaryMode;
-  window.openCmp         = openCmp;
-  window.toggleCmpAccord = toggleCmpAccord;
+  // ── 9. Exposition sur window ─────────────────────────────
+  window.closeCmp = closeCmp;
+  window.openCmp  = openCmp;
 }
 
 // ─────────────────────────────────────────────
@@ -51,7 +66,7 @@ function buildComparatorHTML() {
         <h2>⚖️ Comparer les modes de garde</h2>
         <div class="cmp-hdr-sub">Coût mensuel net estimé · enfant &lt; 3 ans · Paris · temps plein</div>
       </div>
-      <button class="cmp-close" onclick="closeCmp()">✕</button>
+      <button class="cmp-close" id="cmpClose">✕</button>
     </div>
 
     <div class="cmp-body">
@@ -60,8 +75,8 @@ function buildComparatorHTML() {
         <label>Votre revenu mensuel</label>
         <div class="salary-input-wrap">
           <div class="salary-toggle">
-            <button id="btnNet"  class="active" onclick="setSalaryMode('net')">Net</button>
-            <button id="btnBrut"               onclick="setSalaryMode('brut')">Brut</button>
+            <button id="btnNet"  class="active">Net</button>
+            <button id="btnBrut">Brut</button>
           </div>
           <input type="range" id="salarySlider" min="700" max="8000" step="100" value="2500">
           <span class="salary-val" id="salaryVal">2 500 €</span>
@@ -139,7 +154,7 @@ function buildComparatorHTML() {
 
         <!-- Crèche publique -->
         <div style="border:1.5px solid #d4e8d8;border-radius:10px;overflow:hidden;">
-          <button onclick="toggleCmpAccord('pub')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:#f5fbf6;border:none;cursor:pointer;text-align:left;gap:.5rem;">
+          <button data-accord="pub" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:#f5fbf6;border:none;cursor:pointer;text-align:left;gap:.5rem;">
             <div style="display:flex;align-items:center;gap:.6rem;flex:1;min-width:0;">
               <span style="font-size:1.1rem">🏛</span>
               <div>
@@ -160,7 +175,7 @@ function buildComparatorHTML() {
 
         <!-- Crèche privée -->
         <div style="border:1.5px solid #dde0f0;border-radius:10px;overflow:hidden;">
-          <button onclick="toggleCmpAccord('priv')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:#f7f8fd;border:none;cursor:pointer;text-align:left;gap:.5rem;">
+          <button data-accord="priv" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:#f7f8fd;border:none;cursor:pointer;text-align:left;gap:.5rem;">
             <div style="display:flex;align-items:center;gap:.6rem;flex:1;min-width:0;">
               <span style="font-size:1.1rem">🏢</span>
               <div>
@@ -181,7 +196,7 @@ function buildComparatorHTML() {
 
         <!-- Crèche associative -->
         <div style="border:1.5px solid #ddeece;border-radius:10px;overflow:hidden;">
-          <button onclick="toggleCmpAccord('assoc')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:#f6fbf2;border:none;cursor:pointer;text-align:left;gap:.5rem;">
+          <button data-accord="assoc" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:#f6fbf2;border:none;cursor:pointer;text-align:left;gap:.5rem;">
             <div style="display:flex;align-items:center;gap:.6rem;flex:1;min-width:0;">
               <span style="font-size:1.1rem">🤝</span>
               <div>
@@ -202,7 +217,7 @@ function buildComparatorHTML() {
 
         <!-- Assistante maternelle -->
         <div style="border:1.5px solid #fde8d8;border-radius:10px;overflow:hidden;">
-          <button onclick="toggleCmpAccord('am')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:#fff8f4;border:none;cursor:pointer;text-align:left;gap:.5rem;">
+          <button data-accord="am" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:#fff8f4;border:none;cursor:pointer;text-align:left;gap:.5rem;">
             <div style="display:flex;align-items:center;gap:.6rem;flex:1;min-width:0;">
               <span style="font-size:1.1rem">👶</span>
               <div>
@@ -223,7 +238,7 @@ function buildComparatorHTML() {
 
         <!-- Nounou partagée -->
         <div style="border:1.5px solid #e8e8d0;border-radius:10px;overflow:hidden;">
-          <button onclick="toggleCmpAccord('share')" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:#fafaf0;border:none;cursor:pointer;text-align:left;gap:.5rem;">
+          <button data-accord="share" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;background:#fafaf0;border:none;cursor:pointer;text-align:left;gap:.5rem;">
             <div style="display:flex;align-items:center;gap:.6rem;flex:1;min-width:0;">
               <span style="font-size:1.1rem">🏠</span>
               <div>

@@ -338,7 +338,7 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
         * Estimation réglementaire — donnée exacte non disponible dans les bases publiques
       </div>
     </div>
-    <button class="map-toggle" id="mapToggle" onclick="toggleMapMobile()">🗺 Voir la carte</button>
+    <button class="map-toggle" id="mapToggle" >🗺 Voir la carte</button>
   </div>
 
   <div id="map-container" style="position:relative;">
@@ -364,11 +364,11 @@ header{background:var(--forest);height:60px;padding:0 1.5rem;display:flex;align-
 <div class="toast" id="toast"></div>
 
 <!-- ── Modal détail nounous ───────────────────────────────── -->
-<div class="pn-modal-overlay" id="nounouModal" onclick="if(event.target===this)closeNounouModal()">
+<div class="pn-modal-overlay" id="nounouModal">
   <div class="pn-modal">
     <div class="pn-modal-hdr">
       <h3>🏠 Trouver une nounou à domicile</h3>
-      <button class="pn-close" onclick="closeNounouModal()">✕</button>
+      <button class="pn-close" id="nounouClose">✕</button>
     </div>
     <div class="pn-section">
       <h4>📋 Ce qu'il faut savoir</h4>
